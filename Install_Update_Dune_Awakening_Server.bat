@@ -6,15 +6,10 @@ REM Dune: Awakening Self-Hosted Server Installer / Updater
 REM Uses SteamCMD to download or update the server files.
 REM
 REM App IDs:
-REM   3104830 = Dune: Awakening Public Test Client Server
-REM   1192040 = Dune: Awakening Server / live server tool listing
-REM
-REM Leave this as 3104830 if you are installing the current PTC
-REM self-hosted server package. Change to 1192040 later if Funcom
-REM tells you to use the live server tool instead.
+REM   4754530 = Dune: Awakening Dedicated Server
 REM ============================================================
 
-set "APP_ID=3104830"
+set "APP_ID=4754530"
 
 REM Where SteamCMD itself will live:
 set "STEAMCMD_DIR=C:\SteamCMD"
@@ -29,6 +24,8 @@ set "STEAMCMD_ZIP=%TEMP%\steamcmd.zip"
 REM Set to 0 if you do not want the window to pause at the end.
 set "PAUSE_ON_EXIT=1"
 
+set "MODE="
+
 echo.
 echo ============================================================
 echo  Dune: Awakening Server Installer / Updater
@@ -38,7 +35,27 @@ echo  SteamCMD:     %STEAMCMD_DIR%
 echo  Server Files: %SERVER_DIR%
 echo ============================================================
 echo.
+echo Choose an option:
+echo   [1] Initial setup (install SteamCMD if needed, then install/update server)
+echo   [2] Update server only (requires existing SteamCMD + server folders)
+echo.
+choice /C 12 /N /M "Enter selection (1 or 2): "
+if errorlevel 2 set "MODE=UPDATE_ONLY"
+if errorlevel 1 if not defined MODE set "MODE=INITIAL_SETUP"
 
+echo.
+if "%MODE%"=="INITIAL_SETUP" (
+    echo Running INITIAL SETUP mode...
+) else (
+    echo Running UPDATE ONLY mode...
+)
+
+echo.
+if "%MODE%"=="INITIAL_SETUP" goto initial_setup
+if "%MODE%"=="UPDATE_ONLY" goto update_only
+goto fail
+
+:initial_setup
 if not exist "%STEAMCMD_DIR%" (
     echo Creating SteamCMD folder...
     mkdir "%STEAMCMD_DIR%"
@@ -61,6 +78,15 @@ if not exist "%STEAMCMD_DIR%\steamcmd.exe" (
     echo SteamCMD found.
 )
 
+goto run_update
+
+:update_only
+if not exist "%STEAMCMD_DIR%\steamcmd.exe" goto update_precheck_steamcmd_missing
+if not exist "%SERVER_DIR%" goto update_precheck_server_missing
+
+goto run_update
+
+:run_update
 echo.
 echo Updating SteamCMD...
 "%STEAMCMD_DIR%\steamcmd.exe" +quit
@@ -111,6 +137,26 @@ echo %STEAMCMD_DIR%
 echo.
 goto fail
 
+:update_precheck_steamcmd_missing
+echo.
+echo [ERROR] Update-only mode requires an existing SteamCMD install.
+echo steamcmd.exe was not found at:
+echo  %STEAMCMD_DIR%\steamcmd.exe
+echo.
+echo Run this script again and choose option [1] Initial setup first.
+echo.
+goto fail
+
+:update_precheck_server_missing
+echo.
+echo [ERROR] Update-only mode requires an existing server install folder.
+echo Folder not found:
+echo  %SERVER_DIR%
+echo.
+echo Run this script again and choose option [1] Initial setup first.
+echo.
+goto fail
+
 :install_error
 echo.
 echo [ERROR] SteamCMD returned exit code %STEAMCMD_RESULT%.
@@ -120,10 +166,6 @@ echo  - If you see "No subscription", anonymous login may not have access yet.
 echo    Try running SteamCMD manually and logging in with your Steam account:
 echo.
 echo    "%STEAMCMD_DIR%\steamcmd.exe" +force_install_dir "%SERVER_DIR%" +login YOUR_STEAM_USERNAME +app_update %APP_ID% validate +quit
-echo.
-echo  - If the PTC package closes or moves, try changing APP_ID at the top:
-echo      3104830 = PTC server
-echo      1192040 = live server tool listing
 echo.
 goto fail
 
