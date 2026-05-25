@@ -25,6 +25,7 @@ REM Set to 0 if you do not want the window to pause at the end.
 set "PAUSE_ON_EXIT=1"
 
 set "MODE="
+set "OPERATION_NAME="
 
 echo.
 echo ============================================================
@@ -36,26 +37,34 @@ echo  Server Files: %SERVER_DIR%
 echo ============================================================
 echo.
 echo Choose an option:
-echo   [1] Initial setup (install SteamCMD if needed, then install/update server)
-echo   [2] Update server only (requires existing SteamCMD + server folders)
+echo   [1] Initial setup / install server files
+echo   [2] Update server only
+echo   [3] Repair / validate server files
 echo.
-choice /C 12 /N /M "Enter selection (1 or 2): "
-if errorlevel 2 set "MODE=UPDATE_ONLY"
+choice /C 123 /N /M "Enter selection (1, 2, or 3): "
+if errorlevel 3 set "MODE=VALIDATE_REPAIR"
+if errorlevel 2 if not defined MODE set "MODE=UPDATE_ONLY"
 if errorlevel 1 if not defined MODE set "MODE=INITIAL_SETUP"
 
 echo.
 if "%MODE%"=="INITIAL_SETUP" (
     echo Running INITIAL SETUP mode...
-) else (
+)
+if "%MODE%"=="UPDATE_ONLY" (
     echo Running UPDATE ONLY mode...
+)
+if "%MODE%"=="VALIDATE_REPAIR" (
+    echo Running REPAIR / VALIDATE mode...
 )
 
 echo.
 if "%MODE%"=="INITIAL_SETUP" goto initial_setup
 if "%MODE%"=="UPDATE_ONLY" goto update_only
+if "%MODE%"=="VALIDATE_REPAIR" goto validate_repair
 goto fail
 
 :initial_setup
+set "OPERATION_NAME=Initial setup / validation"
 if not exist "%STEAMCMD_DIR%" (
     echo Creating SteamCMD folder...
     mkdir "%STEAMCMD_DIR%"
@@ -78,21 +87,50 @@ if not exist "%STEAMCMD_DIR%\steamcmd.exe" (
     echo SteamCMD found.
 )
 
-goto run_update
+goto run_update_validate
 
 :update_only
+set "OPERATION_NAME=Update"
 if not exist "%STEAMCMD_DIR%\steamcmd.exe" goto update_precheck_steamcmd_missing
 if not exist "%SERVER_DIR%" goto update_precheck_server_missing
 
-goto run_update
+goto run_update_normal
 
-:run_update
+:validate_repair
+set "OPERATION_NAME=Repair / validation"
+if not exist "%STEAMCMD_DIR%\steamcmd.exe" goto validate_precheck_steamcmd_missing
+if not exist "%SERVER_DIR%" goto validate_precheck_server_missing
+
+goto run_update_validate
+
+:run_update_normal
 echo.
 echo Updating SteamCMD...
 "%STEAMCMD_DIR%\steamcmd.exe" +quit
 
 echo.
-echo Installing / updating Dune: Awakening server files...
+echo Running normal server update (no validation)...
+echo This may take a while depending on your connection and disk speed.
+echo.
+
+"%STEAMCMD_DIR%\steamcmd.exe" +force_install_dir "%SERVER_DIR%" +login anonymous +app_update %APP_ID% +quit
+set "STEAMCMD_RESULT=%ERRORLEVEL%"
+
+if not "%STEAMCMD_RESULT%"=="0" goto install_error
+
+goto success
+
+:run_update_validate
+echo.
+echo Updating SteamCMD...
+"%STEAMCMD_DIR%\steamcmd.exe" +quit
+
+echo.
+if "%MODE%"=="INITIAL_SETUP" (
+    echo Running initial install / validate for Dune: Awakening server files...
+) else (
+    echo Running repair / validate for Dune: Awakening server files...
+)
 echo This may take a while depending on your connection and disk speed.
 echo.
 
@@ -101,11 +139,15 @@ set "STEAMCMD_RESULT=%ERRORLEVEL%"
 
 if not "%STEAMCMD_RESULT%"=="0" goto install_error
 
+goto success
+
+:success
 echo.
 echo ============================================================
 echo  SUCCESS
 echo ============================================================
-echo  Dune server files should now be installed or updated here:
+echo  %OPERATION_NAME% completed successfully.
+echo  Dune server files are here:
 echo  %SERVER_DIR%
 echo.
 echo  Next step: open the install folder and follow Funcom's
@@ -157,6 +199,26 @@ echo Run this script again and choose option [1] Initial setup first.
 echo.
 goto fail
 
+:validate_precheck_steamcmd_missing
+echo.
+echo [ERROR] Repair/validate mode requires an existing SteamCMD install.
+echo steamcmd.exe was not found at:
+echo  %STEAMCMD_DIR%\steamcmd.exe
+echo.
+echo Run this script again and choose option [1] Initial setup first.
+echo.
+goto fail
+
+:validate_precheck_server_missing
+echo.
+echo [ERROR] Repair/validate mode requires an existing server install folder.
+echo Folder not found:
+echo  %SERVER_DIR%
+echo.
+echo Run this script again and choose option [1] Initial setup first.
+echo.
+goto fail
+
 :install_error
 echo.
 echo [ERROR] SteamCMD returned exit code %STEAMCMD_RESULT%.
@@ -165,6 +227,10 @@ echo Things to check:
 echo  - If you see "No subscription", anonymous login may not have access yet.
 echo    Try running SteamCMD manually and logging in with your Steam account:
 echo.
+echo    Normal update (no validation):
+echo    "%STEAMCMD_DIR%\steamcmd.exe" +force_install_dir "%SERVER_DIR%" +login YOUR_STEAM_USERNAME +app_update %APP_ID% +quit
+echo.
+echo    Repair / validate:
 echo    "%STEAMCMD_DIR%\steamcmd.exe" +force_install_dir "%SERVER_DIR%" +login YOUR_STEAM_USERNAME +app_update %APP_ID% validate +quit
 echo.
 goto fail
