@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.2.0 - 2026-05-25
+
+### Added
+- New standalone `Update Server.bat` script that runs the **Update only** workflow directly, so you can update without using the interactive menu.
+
+### User Action
+- Use `Install_Update_Dune_Awakening_Server.bat` option **1** once for first-time setup.
+- Use `Update Server.bat` for routine server patch updates.
+
 ## 1.1.0 - 2026-05-25
 
 ### Added
