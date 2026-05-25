@@ -1,12 +1,12 @@
 # Dune: Awakening Self-Hosted Server Setup
 
-Current version: **1.1.0**
+Current version: **1.2.0**
 
 A Windows batch script that automates downloading and updating the **Dune: Awakening** self-hosted dedicated server using [SteamCMD](https://developer.valvesoftware.com/wiki/SteamCMD).
 
 ## What the script does
 
-`Install_Update_Dune_Awakening_Server.bat` now starts with a menu and supports two flows:
+`Install_Update_Dune_Awakening_Server.bat` starts with a menu and supports three flows:
 
 1. **Initial setup**
    - Creates the SteamCMD folder (`C:\SteamCMD`) and server install folder (`C:\GameServers\DuneAwakeningServer`) if needed.
@@ -16,7 +16,10 @@ A Windows batch script that automates downloading and updating the **Dune: Awake
 2. **Update only**
    - Skips setup and download steps.
    - Verifies SteamCMD and server install folder already exist.
-   - Runs SteamCMD patch/update only (`app_update <APP_ID> validate`).
+   - Runs SteamCMD patch/update only (`app_update <APP_ID>`).
+3. **Repair / validate**
+   - Verifies SteamCMD and server install folder already exist.
+   - Runs `app_update <APP_ID> validate` to check and repair missing/corrupt files.
 
 ## Requirements
 
@@ -33,7 +36,15 @@ A Windows batch script that automates downloading and updating the **Dune: Awake
 4. Choose:
    - **1** for first-time setup.
    - **2** for regular server patch updates.
+   - **3** for repair/validate.
 5. Wait for SteamCMD to finish.
+
+### Safer one-click update option
+
+If you only want to run updates and avoid the menu entirely, use `Update Server.bat`.
+
+- It only performs the **Update only** flow.
+- It will stop with a clear error if initial setup has not been completed yet.
 
 ## Configuration
 
